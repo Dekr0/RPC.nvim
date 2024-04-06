@@ -8,3 +8,4 @@ middleware/nanopb
 ipc/nanopb
 ipc/schema.pb.c
 ipc/schema.pb.h
+lua/richpresence/ipcwriter.so
