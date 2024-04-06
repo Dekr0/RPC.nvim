@@ -21,6 +21,8 @@ clean-init:
 	rm -r .venv
 	rm ipc/nanopb
 	rm middleware/nanopb
+	rm -r middleware/include
+	rm -r middleware/lib
 clean-build:
 	cd ipc && make clean
 	cd middleware && make clean
