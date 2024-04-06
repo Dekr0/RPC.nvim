@@ -1,3 +1,7 @@
 .venv
 **/compile_flags.txt
 **/.DS_Store
+middleware/include
+middleware/lib
+middleware/nanopb
+ipc/nanopb
