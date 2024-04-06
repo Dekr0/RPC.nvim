@@ -94,7 +94,7 @@ static const struct luaL_Reg ipcwriterlib [] = {
     { NULL, NULL }
 };
 
-int luaopen_discord_ipcwriter (lua_State *L) {
+int luaopen_richpresence_ipcwriter (lua_State *L) {
     luaL_register(L, "ipcwriter", ipcwriterlib);
     return 1;
 }
