@@ -5,6 +5,11 @@ project(Middleware VERSION 0.1)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -g -O0")
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/nanopb/extra)
+
+find_package(Nanopb REQUIRED)
+
+nanopb_generate_cpp(TARGET proto schema.proto)
 
 add_library(DiscordSDK SHARED IMPORTED)
 
@@ -16,14 +21,16 @@ configure_file(middleware_config.h.in middleware_config.h)
 
 add_executable(Middleware middleware.c init.c logger.c) 
 
-target_link_libraries(Middleware PUBLIC DiscordSDK)
-
 target_include_directories(
     Middleware
     PUBLIC
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/nanopb"
 )
+
+target_link_libraries(Middleware PUBLIC DiscordSDK)
+target_link_libraries(Middleware PUBLIC proto)
 
 install(TARGETS Middleware DESTINATION 
     "$ENV{HOME}/.local/share/nvim/richpresence.nvim")
