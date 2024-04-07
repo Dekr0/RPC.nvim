@@ -1,7 +1,6 @@
 #include "middleware.h"
 
 int neovim(struct sockaddr_un *addr) {
-    int r;
     int fd;
 
     if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -35,12 +34,12 @@ int server(struct sockaddr_un *serverinfo) {
     strncpy(serverinfo->sun_path, MIDDLWARE_SOCKET, 
             sizeof(serverinfo->sun_path) - 1);
 
-    if ((r = bind(fd, (const struct sockaddr *) serverinfo,
-                    sizeof(*serverinfo))) == -1) {
+    if (bind(fd, (const struct sockaddr *) serverinfo,
+                    sizeof(*serverinfo)) == -1) {
         LOG("server", "bind error.", FATAL);
     }
 
-    if ((r = listen(fd, 20)) == -1) {
+    if (listen(fd, 20) == -1) {
         LOG("server", "listen error.", FATAL);
     }
 
