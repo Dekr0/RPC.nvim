@@ -131,6 +131,7 @@ endif()
 
 if(nanopb_BUILD_RUNTIME)
     if(BUILD_SHARED_LIBS)
+        message("Building shared library for nanopb")
         add_library(protobuf-nanopb SHARED
             pb.h
             pb_common.h
@@ -152,6 +153,7 @@ if(nanopb_BUILD_RUNTIME)
     endif()
 
     if(BUILD_STATIC_LIBS)
+        message("Building static library for nanopb")
         add_library(protobuf-nanopb-static STATIC
             pb.h
             pb_common.h
