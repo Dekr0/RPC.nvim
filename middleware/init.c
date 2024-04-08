@@ -1,4 +1,6 @@
-#include "middleware.h"
+#include <unistd.h>
+#include "init.h"
+#include "logger.h"
 
 int neovim(struct sockaddr_un *addr) {
     int fd;
@@ -21,7 +23,6 @@ int neovim(struct sockaddr_un *addr) {
 }
 
 int server(struct sockaddr_un *serverinfo) {
-    int r;
     int fd;
 
     if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
