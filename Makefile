@@ -4,11 +4,15 @@ init: .venv ipc/nanopb middleware/nanopb
 	mv c middleware/include
 	mv lib middleware/
 	rm discord_game_sdk.zip
-build: .venv ipc/nanopb middleware/nanopb ipc/build middleware/build
-	. .venv/bin/activate
+build: .venv ipc/nanopb middleware/nanopb schema ipc/build middleware/build
 .venv:
 	python -m venv .venv
 	. .venv/bin/activate && pip install protobuf grpcio-tools && deactivate
+schema: schema.proto
+	. .venv/bin/activate && python nanopb/generator/nanopb_generator.py schema.proto && deactivate
+	cp schema.pb.c schema.pb.h ipc
+	cp schema.proto middleware
+	mv schema.pb.c schema.pb.h middleware
 ipc/nanopb:
 	ln -s "${PWD}/nanopb" "ipc/"
 middleware/nanopb:
