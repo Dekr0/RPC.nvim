@@ -1,4 +1,8 @@
 #include "ipcwriter.h"
+#include "pb_encode.h"
+#include "schema.pb.h"
+#include "serialize.h"
+#include <stdbool.h>
 
 static int new (lua_State *L) {
     IPCWriter *w = (IPCWriter *) lua_newuserdata(L, sizeof(IPCWriter));
@@ -40,6 +44,17 @@ static int filechange (lua_State *L) {
     if (strlen(f) == 0) {
         return 1;
     }
+
+    // Shortend the filename if filename is longer to 258
+    // Retain parts of the filename and file type
+
+    FileChangeEvent event = FileChangeEvent_init_zero;
+    strncpy(event.filename, f, strlen(f) + 1);
+
+    pb_ostream_t stream = pb_ostream_from_socket(w->fd);
+
+    luaL_argcheck(L, pb_encode_delimited(&stream, FileChangeEvent_fields, 
+                &event), 1, stream.errmsg);
 
     return 1;
 }
