@@ -19,7 +19,7 @@ set_target_properties(DiscordSDK PROPERTIES
 
 configure_file(middleware_config.h.in middleware_config.h)
 
-add_executable(Middleware middleware.c init.c logger.c) 
+add_executable(Middleware discord.c init.c logger.c middleware.c serialize.c) 
 
 target_include_directories(
     Middleware

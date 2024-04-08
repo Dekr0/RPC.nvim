@@ -14,7 +14,7 @@ option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
 add_subdirectory(nanopb)
 
-add_library(ipcwriter SHARED ipcwriter.c schema.pb.c)
+add_library(ipcwriter SHARED ipcwriter.c serialize.c schema.pb.c)
 
 configure_file(ipcwriter.pc.in ipcwriter.pc @ONLY)
 
