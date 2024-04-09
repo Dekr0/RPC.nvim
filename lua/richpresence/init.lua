@@ -1,8 +1,7 @@
---local ipcwriter = require("richpresence.ipcwriter")
+local sdk = require("richpresence.sdk")
 local logger = require("richpresence.logger")
 
 local namespace = "richpresence.nvim"
-local data = string.format("%s/%s", vim.fn.stdpath("data"), namespace)
 local logw = function (f, m)
     logger:log(string.format("%s.%s: %s", namespace, f, m))
 end
@@ -13,9 +12,9 @@ end
 local M = {}
 
 ---@class App
----@field job number
----@field packet number
----@field middleware uv_pipe_t
+---@field callback_timer uv_timer_t
+---@field middleware any 
+---@field middleware_chan uv_pipe_t
 ---@field server     uv_pipe_t
 local App = {}
 
@@ -31,29 +30,37 @@ local on_dir_changed = function()
     -- get current directory after cd => vim.v.event["cwd"]
 end
 
+local run_sdk_callbacks = function()
+    logw("run_callbacks", "run all pending DiscordSDK callbacks")
+    sdk.run_callback(App.middleware)
+end
+
+local on_sdk_data = function(err, data)
+    logw("on_sdk_data", vim.inspect(data))
+end
+
 local serve = function()
-   if not App.middleware then
-       App.middleware = vim.loop.new_pipe(false)
-       App.server:accept(App.middleware)
-       logw("serve", "connection established with middleware.")
+   if not App.middleware_chan then
+       App.middleware_chan = vim.loop.new_pipe(false)
+       App.server:accept(App.middleware_chan)
+       App.middleware_chan:read_start(on_sdk_data)
+       logw("serve", "connection established with discord SDK.")
        return
    end
-   logw("serve", "multiple instances of middleware is not allowed.")
+   logw("serve", "multiple instances of discord SDK is not allowed.")
 end
 
 local destroy = function()
-    if App.ipcwriter then
-        ipcwriter.destroy(App.ipcwriter)
-    end
-    if App.middleware then
-        App.middleware:close()
-        os.remove("/tmp/middlware.socket")
+    if App.middleware_chan then
+        App.middleware_chan:read_stop()
+        App.middleware_chan:close()
     end
     if App.server then
         App.server:close()
     end
-    if App.job > 0 then
-        vim.fn.jobstop(App.job)
+    if App.callback_timer then
+        App.callback_timer:stop()
+        App.callback_timer:close()
     end
 end
 
@@ -69,38 +76,7 @@ local register_vim_autocmd = function()
     })
 end
 
-local on_middleware_exit = function (_, d, _)
-    logw("on_middleware_exit", vim.inspect(d))
-end
-
-local on_middleware_err = function (_, d, _)
-    logw("on_middleware_err", vim.inspect(d))
-end
-
-local on_middleware_stdout = function (_, d, _)
-    logw("on_middleware_stdout", vim.inspect(d))
-end
-
-local start_middleware = function()
-    if not App.job then
-        local opts = {
-            cwd = data,
-            on_exit = on_middleware_exit,
-            on_stderr = on_middleware_err,
-            on_stdout = on_middleware_stdout
-        }
-        local cmd = {"bash", "-c", './Middleware'}
-        App.job = vim.fn.jobstart(cmd, opts)
-        if App.job <= 0 then
-           logw("start_middleware", "failed to start middleware")
-           return
-        end
-        logw("start_middleware", "middleware is running")
-    end
-end
-
 local init = function()
-    App.packet = 0
     if #vim.fs.find("nvim.socket", { path = "/tmp"}) > 0 then
         logw("init",
         "an instance of neovim is already running (check detail in README.md)")
@@ -110,12 +86,9 @@ local init = function()
         App.server = vim.loop.new_pipe(false)
         App.server:bind("/tmp/nvim.socket")
         App.server:listen(128, serve)
-        App.counter = 0
-        --start_middleware()
-        --logw("init", "server is running.")
-        --vim.defer_fn(function ()
-        --    App.ipcwriter = ipcwriter.new()
-        --end, 8000)
+        App.middleware = sdk.init()
+        --App.callback_timer = vim.uv.new_timer()
+        --App.callback_timer:start(5000, 5000, run_sdk_callbacks)
         register_vim_autocmd()
         return
     end

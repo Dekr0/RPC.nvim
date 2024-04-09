@@ -1,2 +1,0 @@
-#define Middleware_VERSION_MAJOR @Middleware_VERSION_MAJOR@
-#define Middleware_VERSION_MINOR @Middleware_VERSION_MINOR@

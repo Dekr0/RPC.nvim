@@ -8,6 +8,5 @@ Description: @PROJECT_DESCRIPTION@
 Version: @PROJECT_VERSION@
 
 Requires:
-Libs: -L${libdir} -lipcwriter
+Libs: -L${libdir} -lsdk
 Cflags: -I${includedir}
-

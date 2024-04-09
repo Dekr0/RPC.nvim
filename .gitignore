@@ -1,11 +1,5 @@
-.venv
 **/compile_flags.txt
 **/.DS_Store
 **/build
-middleware/include
-middleware/lib
-middleware/nanopb
-ipc/nanopb
-ipc/schema.pb.c
-ipc/schema.pb.h
-lua/richpresence/ipcwriter.so
+sdk/include
+sdk/lib
