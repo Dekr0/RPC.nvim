@@ -1,4 +1,4 @@
-local ipcwriter = require("richpresence.ipcwriter")
+--local ipcwriter = require("richpresence.ipcwriter")
 local logger = require("richpresence.logger")
 
 local namespace = "richpresence.nvim"
@@ -22,7 +22,9 @@ local App = {}
 App.__index = App
 
 local on_buf_enter = function()
-    -- get current buffer => vim.api.nvim_buf_get_name
+    local full_name = vim.api.nvim_buf_get_name(0)
+    if (string.len(full_name) == 0) then return end
+    local name = vim.fs.basename(full_name)
 end
 
 local on_dir_changed = function()
@@ -42,10 +44,10 @@ end
 local destroy = function()
     if App.ipcwriter then
         ipcwriter.destroy(App.ipcwriter)
-        os.remove("/tmp/middlware.socket")
     end
     if App.middleware then
         App.middleware:close()
+        os.remove("/tmp/middlware.socket")
     end
     if App.server then
         App.server:close()
@@ -109,14 +111,15 @@ local init = function()
         App.server:bind("/tmp/nvim.socket")
         App.server:listen(128, serve)
         App.counter = 0
-        logw("init", "server is running.")
+        --start_middleware()
+        --logw("init", "server is running.")
+        --vim.defer_fn(function ()
+        --    App.ipcwriter = ipcwriter.new()
+        --end, 8000)
         register_vim_autocmd()
         return
     end
     logw("init", "an instance of server is already running.")
-    start_middleware()
-    vim.defer_fn(function ()
-    end, 2000)
 end
 
 M.setup = function ()

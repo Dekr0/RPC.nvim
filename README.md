@@ -1,4 +1,6 @@
-# (richpresence.nvim) - Discord Rich Presence Integration for Neovim
+# (richpresence.nvim) - Discord Rich Presence Integration for Neovim (WIP)
+
+- WARNING: This plugin is still under development and unstable.
 
 - This plugin only available on UNIX based platform because it uses Discord's
  GameSDK to interact with the Discord process running in a user machine. The 
@@ -17,10 +19,18 @@ test out compile and build process.
 ## TODO (Requirement)
 
 - Build process
-- Support for other operating systems
 - Message passing between richpresence.nvim and middleware
 - Allow users to configure how status of rich presence should be display in 
 Discord rich presence
+- Refactor and address any potential bad practices and performance bad spot 
+in Lua and C
+    - Encapsulate state in Classes in Lua
+    - Swap out `select` as a primary polling mechanism in C
+        - `libevent`?
+    - partial send
+    - timing
+    - message queue
+- Support for other operating systems
 
 ## TODO (Future Plans)
 

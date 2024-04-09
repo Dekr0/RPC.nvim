@@ -2,7 +2,7 @@
 #include "init.h"
 #include "logger.h"
 
-int neovim(struct sockaddr_un *addr) {
+int conn_nvim(struct sockaddr_un *addr) {
     int fd;
 
     if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -22,7 +22,7 @@ int neovim(struct sockaddr_un *addr) {
     return fd;
 }
 
-int server(struct sockaddr_un *serverinfo) {
+int setup(struct sockaddr_un *serverinfo) {
     int fd;
 
     if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -47,7 +47,7 @@ int server(struct sockaddr_un *serverinfo) {
     return fd;
 }
 
-void init(
+void conn_discord(
         App *app, 
         struct IDiscordUserEvents *user_events,
         struct IDiscordActivityEvents *activities_events
