@@ -1,5 +1,6 @@
 local sdk = require("richpresence.sdk")
 local logger = require("richpresence.logger")
+local utils = require("richpresence.utils")
 
 local namespace = "richpresence.nvim"
 local logw = function (f, m)
@@ -21,9 +22,6 @@ local App = {}
 App.__index = App
 
 local on_buf_enter = function()
-    local full_name = vim.api.nvim_buf_get_name(0)
-    if (string.len(full_name) == 0) then return end
-    local name = vim.fs.basename(full_name)
 end
 
 local on_dir_changed = function()
@@ -32,10 +30,12 @@ end
 
 local run_sdk_callbacks = function()
     logw("run_callbacks", "run all pending DiscordSDK callbacks")
-    sdk.run_callback(App.middleware)
+    local user_id = sdk.run_callback(App.middleware)
+    logw("run_callbacks", string.format("User Id: %d", user_id))
 end
 
 local on_sdk_data = function(err, data)
+    logw("on_sdk_data", vim.inspect(err))
     logw("on_sdk_data", vim.inspect(data))
 end
 
@@ -51,16 +51,19 @@ local serve = function()
 end
 
 local destroy = function()
+    if App.callback_timer then
+        App.callback_timer:stop()
+        App.callback_timer:close()
+    end
+    if App.middleware then
+        sdk.clean(App.middleware)
+    end
     if App.middleware_chan then
         App.middleware_chan:read_stop()
         App.middleware_chan:close()
     end
     if App.server then
         App.server:close()
-    end
-    if App.callback_timer then
-        App.callback_timer:stop()
-        App.callback_timer:close()
     end
 end
 
@@ -86,9 +89,14 @@ local init = function()
         App.server = vim.loop.new_pipe(false)
         App.server:bind("/tmp/nvim.socket")
         App.server:listen(128, serve)
-        App.middleware = sdk.init()
-        --App.callback_timer = vim.uv.new_timer()
-        --App.callback_timer:start(5000, 5000, run_sdk_callbacks)
+        if utils.open_as_workspace() then
+            App.middleware = sdk.init(utils.cwd(), "", "", "Normal");
+        else
+            local filename, ext = utils.cf()
+            App.middleware = sdk.init(utils.cwd(), filename, ext, "Normal");
+        end
+        App.callback_timer = vim.uv.new_timer()
+        App.callback_timer:start(2000, 2000, run_sdk_callbacks)
         register_vim_autocmd()
         return
     end

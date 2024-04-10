@@ -3,3 +3,12 @@
 **/build
 sdk/include
 sdk/lib
+lua/richpresence/sdk.so
+.venv
+middleware/include
+middleware/lib
+middleware/nanopb
+ipc/nanopb
+ipc/schema.pb.c
+ipc/schema.pb.h
+lua/richpresence/ipcwriter.so
