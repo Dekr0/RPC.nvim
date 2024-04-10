@@ -5,6 +5,7 @@
 - Preview (Initial status after opening nvim)
 
 ![image](https://github.com/Dekr0/richpresence.nvim/assets/54260982/a823d849-a34a-4b89-a29e-de618c11e521)
+
 ![image](https://github.com/Dekr0/richpresence.nvim/assets/54260982/caea0141-07eb-4d8c-bb41-771cd745894f)
 
 ## Status and Suggestions
