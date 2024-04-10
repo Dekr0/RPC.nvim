@@ -2,6 +2,14 @@
 
 - WARNING: This plugin is still under development and unstable.
 
+- Preview (Initial status after opening nvim)
+
+- ![image](https://github.com/Dekr0/richpresence.nvim/assets/54260982/a823d849-a34a-4b89-a29e-de618c11e521)
+
+- ![image](https://github.com/Dekr0/richpresence.nvim/assets/54260982/caea0141-07eb-4d8c-bb41-771cd745894f)
+
+## Status and Suggestions
+
 - This plugin only available on UNIX based platform because it uses Discord's
  GameSDK to interact with the Discord process running in a user machine. The 
  GameSDK are a bundle of C/C++ shared libraries so each platform / architecture 
@@ -15,6 +23,10 @@
 - I will also add support for Windows because I use dual-boot in my daily 
 workflow. MacOS will also be supported but I don't have a MacOS based machine to
 test out compile and build process.
+- Feel free to point out any mistakes and bad practices in the implementation since
+I consider myself is very junior just graduate uni.
+- If you have suggestions on how should the rich presence looks or features you want, feel
+free to leave suggestions.
  
 ## TODO (Requirement)
 
@@ -36,13 +48,3 @@ in Lua and C
 
 - Users can request interaction with a user using Neovim
     - Share configuration?
-
-## Development Notes
-
-### `vim.fn.jobstart`
-
-- Callbacks for `stdout` and `stderr` passed into jobstart will not run unless 
-the middleware flushed `stdout` and `stderr` respectively
-    - Flush is also required when writing into the log file.
-    - Content is unavailable until middleware is closed
-- Callbacks may receive partial (incomplete lines)
