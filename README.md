@@ -22,20 +22,20 @@ test out compile and build process.
 - Message passing between richpresence.nvim and middleware
 - Allow users to configure how status of rich presence should be display in 
 Discord rich presence
-- Refactor and address any potential bad practices and performance bad spot 
-in Lua and C
+- Refactor and address any potential bad practices and performance bad spot in 
+Lua and C
+    - minor diff check to minimize the amount of rich presence update being done
     - Encapsulate state in Classes in Lua
-    - Swap out `select` as a primary polling mechanism in C
-        - `libevent`?
-    - partial send
     - timing
-    - message queue
+    - update loop
 - Support for other operating systems
 
 ## TODO (Future Plans)
 
 - Users can request interaction with a user using Neovim
     - Share configuration?
+- View project repository if git is enabled
+- Using Neovim as a frontend to interact with Discord
 
 ## Development Notes
 
