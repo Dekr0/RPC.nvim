@@ -18,7 +18,7 @@ set_target_properties(DiscordSDK PROPERTIES
     IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/lib/x86_64/discord_game_sdk.so"
 )
 
-add_library(sdk SHARED sdk.c)
+add_library(sdk SHARED sdk.c init.c callback.c)
 
 configure_file(sdk.pc.in sdk.pc @ONLY)
 
