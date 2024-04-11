@@ -1,29 +1,9 @@
 #ifndef RICHPRESENCE_NVIM_H
 #define RICHPRESENCE_NVIM_H
 
+#include <lua5.1/lauxlib.h>
 #include <sys/un.h>
 #include "discord_game_sdk.h"
-
-#define CLIENT_ID 1222702873440157796
-#define MAX_MODE_LEN 16
-#define MAX_EXT_LEN 16
-#define SOCKET_PATH "/tmp/nvim.socket"
-
-/*
- * Normal
- * Visual
- * Select
- * Insert
- * Cmdline
- * Ex
- * Terminal
- * Operator-pending
- * Replace
- * Virtual Replace
- * Insert Normal
- * Insert Visual
- * Insert Select
- */
 
 typedef struct Middleware {
     int fd;
@@ -37,6 +17,6 @@ typedef struct Middleware {
     DiscordUserId user_id;
 } Middleware;
 
-
+int luaopen_richpresence_sdk (lua_State *);
 
 #endif
