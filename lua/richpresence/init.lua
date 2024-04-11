@@ -13,15 +13,17 @@ end
 local M = {}
 
 ---@class App
----@field callback_timer uv_timer_t
----@field middleware any 
----@field middleware_chan uv_pipe_t
+---@field next_state State
+---@field timer uv_timer_t
+---@field sdk any 
+---@field chan uv_pipe_t
 ---@field server     uv_pipe_t
 local App = {}
 
 App.__index = App
 
 local on_buf_enter = function()
+    App.next_state:on_buf_enter()
 end
 
 local on_dir_changed = function()
@@ -30,7 +32,21 @@ end
 
 local run_sdk_callbacks = function()
     logw("run_callbacks", "run all pending DiscordSDK callbacks")
-    local user_id = sdk.run_callback(App.middleware)
+
+    -- generate random APM
+    math.randomseed(os.time())
+    math.random(); math.random(); math.random()
+    App.next_state.apm = math.random(60, 90)
+
+    local user_id = sdk.run_callback(
+        App.sdk,
+        App.next_state.workplace,
+        App.next_state.filename,
+        App.next_state.ext,
+        App.next_state.mode,
+        App.next_state.apm
+    )
+
     logw("run_callbacks", string.format("User Id: %d", user_id))
 end
 
@@ -40,10 +56,10 @@ local on_sdk_data = function(err, data)
 end
 
 local serve = function()
-   if not App.middleware_chan then
-       App.middleware_chan = vim.loop.new_pipe(false)
-       App.server:accept(App.middleware_chan)
-       App.middleware_chan:read_start(on_sdk_data)
+   if not App.chan then
+       App.chan = vim.loop.new_pipe(false)
+       App.server:accept(App.chan)
+       App.chan:read_start(on_sdk_data)
        logw("serve", "connection established with discord SDK.")
        return
    end
@@ -51,16 +67,16 @@ local serve = function()
 end
 
 local destroy = function()
-    if App.callback_timer then
-        App.callback_timer:stop()
-        App.callback_timer:close()
+    if App.timer then
+        App.timer:stop()
+        App.timer:close()
     end
-    if App.middleware then
-        sdk.clean(App.middleware)
+    if App.sdk then
+        sdk.clean(App.sdk)
     end
-    if App.middleware_chan then
-        App.middleware_chan:read_stop()
-        App.middleware_chan:close()
+    if App.chan then
+        App.chan:read_stop()
+        App.chan:close()
     end
     if App.server then
         App.server:close()
@@ -85,21 +101,28 @@ local init = function()
         "an instance of neovim is already running (check detail in README.md)")
         return
     end
+
     if not App.server then
         App.server = vim.loop.new_pipe(false)
         App.server:bind("/tmp/nvim.socket")
         App.server:listen(128, serve)
-        if utils.open_as_workspace() then
-            App.middleware = sdk.init(utils.cwd(), "", "", "Normal");
-        else
-            local filename, ext = utils.cf()
-            App.middleware = sdk.init(utils.cwd(), filename, ext, "Normal");
-        end
-        App.callback_timer = vim.uv.new_timer()
-        App.callback_timer:start(2000, 2000, run_sdk_callbacks)
+
+        App.next_state = require("richpresence.state")
+
+        App.sdk = sdk.init(
+            App.next_state.workplace,
+            App.next_state.filename,
+            App.next_state.ext,
+            App.next_state.mode,
+            App.next_state.apm
+        )
+
+        App.timer = vim.uv.new_timer()
+        App.timer:start(5000, 5000, run_sdk_callbacks)
         register_vim_autocmd()
         return
     end
+
     logw("init", "an instance of server is already running.")
 end
 
