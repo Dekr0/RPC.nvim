@@ -1,136 +1,101 @@
-local sdk = require("richpresence.sdk")
+local Options = require("richpresence.options")
 local logger = require("richpresence.logger")
+local sdk    = require("richpresence.sdk")
 
 local namespace = "richpresence.nvim"
-local logw = function (f, m)
-    logger:log(string.format("%s.%s: %s", namespace, f, m))
-end
 
 ---@class M
----@field setup function
----@field show  function
-local M = {}
+---@field app App
+local M = { }
 
 ---@class App
+---@field discord    any 
 ---@field next_state State
----@field timer uv_timer_t
----@field sdk any 
----@field chan uv_pipe_t
----@field server     uv_pipe_t
+---@field opts       Options
+---@field timer      uv_timer_t
 local App = {}
 
 App.__index = App
 
-local on_buf_enter = function()
-    App.next_state:on_buf_enter()
+---@param opts Options
+function App:new(opts)
+    local next_state = require("richpresence.state")
+    local discord = sdk.init(
+        next_state.workplace,
+        next_state.filename,
+        next_state.ext,
+        next_state.mode,
+        next_state.apm
+    )
+    local timer = vim.uv.new_timer()
+
+    local app = setmetatable({
+        discord    = discord,
+        next_state = next_state,
+        opts       = Options(opts),
+        timer      = timer
+    }, self)
+
+    if opts.auto_update then
+        timer:start(5000, 5000, function () app:update() end)
+    end
+
+    return app
 end
 
-local on_dir_changed = function()
-    -- get current directory after cd => vim.v.event["cwd"]
+function App:destroy()
+    if self.timer then
+        self.timer:stop()
+        self.timer:close()
+    end
+    if self.discord then
+        sdk.clean(self.discord)
+    end
 end
 
-local run_sdk_callbacks = function()
-    logw("run_callbacks", "run all pending DiscordSDK callbacks")
+function App:log(f, m)
+    logger:log(string.format("%s.%s: %s", namespace, f, m))
+end
 
-    -- generate random APM
+function App:update()
+    if self.opts.logging then
+        self:log("run_callbacks", "run all pending DiscordSDK callbacks")
+    end
+
     math.randomseed(os.time())
     math.random(); math.random(); math.random()
-    App.next_state.apm = math.random(60, 90)
 
-    logw("run_sdk_callbacks", App.next_state:tostring())
+    self.next_state.apm = math.random(60, 90)
+
+    if self.opts.logging then
+        self:log("run_sdk_callbacks", self.next_state:tostring())
+    end
 
     sdk.run_callback(
-        App.sdk,
-        App.next_state.workplace,
-        App.next_state.filename,
-        App.next_state.ext,
-        App.next_state.mode,
-        App.next_state.apm
+        self.discord,
+        self.next_state.workplace,
+        self.next_state.filename,
+        self.next_state.ext,
+        self.next_state.mode,
+        self.next_state.apm
     )
 end
 
-local on_sdk_data = function(err, data)
-    logw("on_sdk_data", vim.inspect(err))
-    logw("on_sdk_data", vim.inspect(data))
+---@param opts Options
+function M.setup(opts)
+    M.app = App:new(opts)
+    vim.api.nvim_create_autocmd("BufEnter",   { callback = function ()
+        M.app.next_state:on_buf_enter()
+    end})
+    vim.api.nvim_create_autocmd("DirChanged", { callback = function ()
+        -- get current directory after cd => vim.v.event["cwd"]
+    end})
+    vim.api.nvim_create_autocmd("VimLeave",   { callback = function ()
+        M.app:destroy()
+    end})
 end
 
-local serve = function()
-   if not App.chan then
-       App.chan = vim.loop.new_pipe(false)
-       App.server:accept(App.chan)
-       App.chan:read_start(on_sdk_data)
-       logw("serve", "connection established with discord SDK.")
-       return
-   end
-   logw("serve", "multiple instances of discord SDK is not allowed.")
-end
-
-local destroy = function()
-    if App.timer then
-        App.timer:stop()
-        App.timer:close()
-    end
-    if App.sdk then
-        sdk.clean(App.sdk)
-    end
-    if App.chan then
-        App.chan:read_stop()
-        App.chan:close()
-    end
-    if App.server then
-        App.server:close()
-    end
-end
-
-local register_vim_autocmd = function()
-    vim.api.nvim_create_autocmd("VimLeave", {
-        callback = destroy
-    })
-    vim.api.nvim_create_autocmd("BufEnter", {
-        callback = on_buf_enter
-    })
-    vim.api.nvim_create_autocmd("DirChanged", {
-        callback = on_dir_changed
-    })
-end
-
-local init = function()
-    if #vim.fs.find("nvim.socket", { path = "/tmp"}) > 0 then
-        logw("init",
-        "an instance of neovim is already running (check detail in README.md)")
-        return
-    end
-    if not App.server then
-        App.server = vim.loop.new_pipe(false)
-        App.server:bind("/tmp/nvim.socket")
-        App.server:listen(128, serve)
-
-        App.next_state = require("richpresence.state")
-
-        App.sdk = sdk.init(
-            App.next_state.workplace,
-            App.next_state.filename,
-            App.next_state.ext,
-            App.next_state.mode,
-            App.next_state.apm
-        )
-
-        App.timer = vim.uv.new_timer()
-        App.timer:start(5000, 5000, run_sdk_callbacks)
-        register_vim_autocmd()
-        return
-    end
-
-    logw("init", "an instance of server is already running.")
-end
-
-M.setup = function ()
-    vim.api.nvim_create_autocmd("VimEnter", {
-        callback = init
-    })
-end
-
-M.show = function ()
+function M.show()
     logger:show()
 end
 
