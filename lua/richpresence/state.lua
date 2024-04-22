@@ -28,9 +28,17 @@ function State:new()
     return state
 end
 
+function State:tostring()
+    return string.format("filename = %s, ext = %s", self.filename, self.ext)
+end
+
 ---@return boolean
 function State:on_buf_enter()
-    if (string.len(vim.api.nvim_buf_get_name(0)) == 0) then
+    local buf_name = vim.api.nvim_buf_get_name(0)
+    if (vim.fn.isdirectory(buf_name) == 1) then
+        return false
+    end
+    if (string.len(buf_name) == 0) then
         return false
     end
     local filename, ext = utils.cf()
