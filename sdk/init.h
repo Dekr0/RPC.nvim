@@ -20,7 +20,7 @@ void assign_detail (const char *, const char *, const char *, char *);
 
 void assign_state (const char *, const unsigned short, char *);
 
-void activity_init (
+void update_activity (
         Middleware *, 
         const char *, 
         const char *, 
