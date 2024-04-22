@@ -1,6 +1,5 @@
 local sdk = require("richpresence.sdk")
 local logger = require("richpresence.logger")
-local utils = require("richpresence.utils")
 
 local namespace = "richpresence.nvim"
 local logw = function (f, m)
@@ -38,7 +37,9 @@ local run_sdk_callbacks = function()
     math.random(); math.random(); math.random()
     App.next_state.apm = math.random(60, 90)
 
-    local user_id = sdk.run_callback(
+    logw("run_sdk_callbacks", App.next_state:tostring())
+
+    sdk.run_callback(
         App.sdk,
         App.next_state.workplace,
         App.next_state.filename,
@@ -46,8 +47,6 @@ local run_sdk_callbacks = function()
         App.next_state.mode,
         App.next_state.apm
     )
-
-    logw("run_callbacks", string.format("User Id: %d", user_id))
 end
 
 local on_sdk_data = function(err, data)
@@ -101,7 +100,6 @@ local init = function()
         "an instance of neovim is already running (check detail in README.md)")
         return
     end
-
     if not App.server then
         App.server = vim.loop.new_pipe(false)
         App.server:bind("/tmp/nvim.socket")
