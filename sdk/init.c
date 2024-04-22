@@ -1,3 +1,4 @@
+#include <lua5.1/lauxlib.h>
 #include <lua5.1/lua.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,8 +6,21 @@
 #include "callback.h"
 #include "init.h"
 
-const char *EXT[] = { "c", "lua" };
-const char EXT_LEN = 2;
+const char *EXT[] = { 
+    "c",
+    "css",
+    "git",
+    "go",
+    "h",
+    "js",
+    "lua",
+    "makefile",
+    "md",
+    "ts",
+    "lua"
+};
+
+const char EXT_LEN = 10;
 
 void conn_neovim(lua_State *L, Middleware *m) {
     luaL_argcheck(L, (m->fd = socket(AF_UNIX, SOCK_STREAM, 0)) != -1, 0, 
@@ -32,27 +46,34 @@ void conn_discord(lua_State *L, Middleware *m) {
 
     user_events.on_current_user_update = on_user_updated;
 
-    struct DiscordCreateParams params;
+    static struct DiscordCreateParams params;
     params.client_id = CLIENT_ID;
     params.flags = DiscordCreateFlags_Default;
     params.event_data = m;
     params.activity_events = &activities_events;
     params.user_events = &user_events;
 
-    luaL_argcheck(L,
-            DiscordCreate(DISCORD_VERSION, &params, &(m->core)) == DiscordResult_Ok,
-            1,
-            "failed to connect to Discord"
-            );
+    luaL_argcheck(L, DiscordCreate(DISCORD_VERSION, &params, &(m->core)) 
+            == DiscordResult_Ok, 1, "failed to connect to Discord");
+
+    luaL_argcheck(L, m->core != NULL, 1, 
+            "failed to connect to Discord. IDiscordCore is NULL");
 
     m->users = m->core->get_user_manager(m->core);
+
+    luaL_argcheck(L, m->users != NULL, 1, 
+            "failed to connect to Discord. IDiscordUserManager is NULL");
+
     m->activities = m->core->get_activity_manager(m->core);
+
+    luaL_argcheck(L, m->activities != NULL, 1, 
+            "failed to connect to Discord. IDiscordActivityManager is NULL");
 }
 
 void assign_ext_image (const char *ext, char *large_image) {
     for (size_t i = 0; i < EXT_LEN; i++) {
-        if (strcmp(ext, EXT[i]) == 0) {
-            strcpy(large_image, ext);
+        if (strcasecmp(ext, EXT[i]) == 0) {
+            strcpy(large_image, EXT[i]);
             return;
         }
     }
@@ -65,19 +86,21 @@ void assign_detail (const char *filename, const char *ext, const char *mode,
     const unsigned long defined = strlen("Editing ") + 1 + MAX_EXT_LEN + 
         strlen(" | Mode: ") + 1;
     const unsigned long limit = 128 - defined;
+    const unsigned long filename_len = strlen(filename);
+    const unsigned long ext_len = strlen(ext);
 
     strcpy(detail, "Editing ");
 
-    if (strlen(filename) >= limit) {
+    if (filename_len >= limit) {
         strncat(detail, filename, limit - 3);
         strcat(detail, "...");
     } else {
         strcat(detail, filename);
     }
 
-    strcat(detail, ".");
+    ext_len > 0 ? strcat(detail, ".") : 0;
 
-    strlen(ext) >= 16 ? strncat(detail, ext, 16) : strcat(detail, ext);
+    ext_len >= 16 ? strncat(detail, ext, 16) : strcat(detail, ext);
 
     strcat(detail, " | Mode: ");
     strcat(detail, mode);
@@ -99,14 +122,14 @@ void assign_state (const char *workplace, const unsigned short apm,
         strcat(state, workplace);
     }
 
-    strcat(state, "/ | APM: ");
+    strcat(state, " | APM: ");
 
     char buf[MAX_APM_LEN]; snprintf(buf, MAX_APM_LEN, "%u", apm);
 
     strcat(state, buf);
 }
 
-void activity_init (
+void update_activity (
         Middleware *m, 
         const char *workplace, 
         const char *filename, 
@@ -114,13 +137,14 @@ void activity_init (
         const char *mode,
         const unsigned short apm
         ) {
-    m->neovim_activity.instance = 0;
-
     if (strlen(filename) == 0 && strlen(ext) == 0) {
         strcpy(m->neovim_activity.assets.large_image, "idle");
     } else {
         strcpy(m->neovim_activity.assets.small_image, "idle");
-        assign_ext_image(ext, m->neovim_activity.assets.large_image);
+
+        assign_ext_image(strlen(ext) == 0 ? filename : ext, 
+                m->neovim_activity.assets.large_image);
+
         assign_detail(filename, ext, mode, m->neovim_activity.details);
     }
     assign_state(workplace, apm, m->neovim_activity.state);
