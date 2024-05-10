@@ -1,4 +1,4 @@
-local utils = require("richpresence.utils")
+local utils = require("RPC.utils")
 
 ---@class State
 ---@field workplace string
