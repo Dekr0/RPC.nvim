@@ -1,0 +1,3 @@
+[submodule "lua/lua-struct"]
+	path = lua/lua-struct
+	url = git@github.com:Dekr0/lua-struct.git
