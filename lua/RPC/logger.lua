@@ -3,16 +3,27 @@
 ---@field max_lines number
 local Logger = {}
 
+---@type Logger | nil
+local instance = nil
+
 Logger.__index = Logger
+
+function Logger:l(n, f, m)
+    self:log(string.format("%s.%s: %s", n, f, m))
+end
 
 ---@return Logger
 function Logger:new()
-    local logger = setmetatable({
+    if instance then
+        return instance
+    end
+
+    instance = setmetatable({
         lines = {},
         max_lines = 50,
     }, self)
 
-    return logger
+    return instance
 end
 
 ---@param line string
