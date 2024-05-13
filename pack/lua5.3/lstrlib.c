@@ -1447,6 +1447,51 @@ static int str_packsize (lua_State *L) {
 ** it must check the unread bytes to see whether they do not cause an
 ** overflow.
 */
+/* Example
+ * str = { 0x00, 0x01, 0x20, 0x33, 0x04, 0x56 }
+ * 
+ * res = 0
+ * 
+ * islittle = 1
+ * 
+ * limit = (6 <= 4) ? 6 : 4
+ * limit = 4
+ * 
+ * i = limit - 1 = 4 - 1 = 3; i >= 0; i--
+ * 
+ * when i = 3:
+ * res <<= NB // res = res << 8
+ * res = 0 << 8 = 0
+ * res |= (lua_Unsigned) (unsigned char) str[3] // res = res | str[3]
+ * res = 0x0 | 0x33
+ * res = 0x00 | 0x33
+ * res = 0x33
+ * 
+ * when i = 2:
+ * res = 0x33 << 8 = 0x3300
+ * res = 0x3300 | str[2]
+ * res = 0x3300 | 0x0020
+ * res = 0x3320
+ * 
+ * when i = 1:
+ * res = 0x3320 << 8 = 0x332000
+ * res = 0x332000 | str[1]
+ * res = 0x332000 | 0x000001
+ * res = 0x332001
+ * 
+ * when i = 0:
+ * res = 0x332001 << 8 = 0x33200100
+ * res = 0x33200100 | str[0]
+ * res = 0x33200100 | 0x00000000
+ * res = 0x33200100
+ * 
+ * 6 > 4:
+ * mask = (!0 || res >= 0) ? 0 : ( (1 << 8) - 1 ) 
+ * mask = (1 || 1) ? 0 : 255
+ * mask = 0
+ * when i = 4:
+ *     (unsigned char)str[4] != 0 // 0x04 != 0 => throw Error
+ */
 static lua_Integer unpackint (lua_State *L, const char *str,
                               int islittle, int size, int issigned) {
   lua_Unsigned res = 0;
