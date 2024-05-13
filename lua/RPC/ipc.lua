@@ -65,10 +65,6 @@ function IPC:read(req_opcode, chunk)
 
     local res_opcode_chunk = string.sub(chunk, 1, 4)
     local res_length_chunk = string.sub(chunk, 5, 8)
-
-    logger:l("", "", chunk)
-    logger:l("", "", res_opcode_chunk)
-    logger:l("", "", res_length_chunk)
 end
 
 -- Abstraction on message delivery
@@ -104,6 +100,7 @@ function IPC:write(req_opcode, t)
     self.pipe:read_start(function(err, chunk)
         assert(not err, err)
         logger:l(n, "IPC:write: pipe:write", "...Payload arrived");
+        logger:l(n, "IPC:write: pipe:write", vim.inspect(chunk));
         self:read(req_opcode, chunk)
     end)
 
@@ -116,8 +113,7 @@ end
 function IPC:handshake()
     if self.handshake_finish then return end
 
-    local t = { client_id = client_id, v = 1
-    }
+    local t = { client_id = client_id, v = 1 }
 
     self:write(Opcode.Handshake, t)
 end
