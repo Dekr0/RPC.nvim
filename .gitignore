@@ -2,3 +2,4 @@
 **/.DS_Store
 **/build
 lua/pack.so
+lua/uuid.so
