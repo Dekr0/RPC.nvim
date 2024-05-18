@@ -6,7 +6,7 @@ local n = "RPC.init"
 ---@class App
 ---@field opts         Opts
 ---@field __IPC        IPC
----@field __next_state State
+---@field __state      State
 ---@field __timer      uv_timer_t
 local RPC = {}
 RPC.__index = RPC
@@ -19,7 +19,7 @@ function RPC:setup(usr)
     local app = setmetatable({
         opts         = opts,
         __IPC        = require("RPC.ipc"),
-        __next_state = require("RPC.state"),
+        __state      = require("RPC.state"):new(),
         __timer      = timer
     }, self)
 
@@ -27,15 +27,19 @@ function RPC:setup(usr)
         timer:start(
             opts.auto_update_timer,
             opts.auto_update_timer,
-            function () app:update() end
+            function ()
+                if app.__IPC.handshake_finish then
+                    vim.schedule(function () app:update() end)
+                end
+            end
         )
     end
 
     vim.api.nvim_create_autocmd("BufEnter",   { callback = function ()
-        app.__next_state:on_buf_enter()
+        app.__state:on_buf_enter()
     end})
     vim.api.nvim_create_autocmd("DirChanged", { callback = function ()
-        -- get current directory after cd => vim.v.event["cwd"]
+        app.__state:on_dir_changed(vim.v.event["cwd"])
     end})
     vim.api.nvim_create_autocmd("VimLeave",   { callback = function ()
         app:destroy()
@@ -49,20 +53,20 @@ function RPC:destroy()
         self.__timer:stop()
         self.__timer:close()
     end
+    self.__IPC:destroy()
 end
 
 function RPC:update()
     if self.opts.logging then
-        logger:l(n, "run_callbacks", "run all pending DiscordSDK callbacks")
+        logger:l(n, "RPC:update", string.format("Updating activity..."))
     end
 
-    math.randomseed(os.time())
-    math.random(); math.random(); math.random()
+    self.__state:set_activity()
 
-    self.__next_state.apm = math.random(60, 90)
+    self.__IPC:set_activity(self.__state.activity)
 
     if self.opts.logging then
-        logger:l(n, "run_sdk_callbacks", self.__next_state:tostring())
+        logger:l(n, "RPC:update", self.__state:tostring())
     end
 end
 
