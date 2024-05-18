@@ -169,17 +169,10 @@ function IPC:parse_frame(req_opcode, req_cmd, data)
     assert(json_data, "Nil JSON data")
 
     if (req_opcode == Opcode.Handshake) then
-        self.handshake_finish = true
-
         assert(json_data.cmd == CMD.DISPATCH)
         assert(json_data.evt == Event.READY,
             "Failed to establish a Discord RPC handshake")
-        self:set_activity()
-    elseif req_opcode == Opcode.Frame then
-        if req_cmd == CMD.AUTHORIZE then
-            assert(json_data.cmd == CMD.AUTHORIZE)
-            logger:l("", "", json_data.data.code)
-        end
+        self.handshake_finish = true
     end
 end
 
@@ -215,55 +208,29 @@ function IPC:write(req_opcode, t)
     ---@param chunk string
     self.pipe:read_start(function(err, chunk)
         assert(not err, err)
-        logger:l(n, "IPC:write: pipe:write", "...Payload arrived");
+        logger:l(n, "IPC:write -> pipe:write", "...Payload arrived");
         self:read(req_opcode, t.cmd, chunk)
     end)
 
     self.pipe:write(pl, function (reason)
         assert(not reason, reason)
-        logger:l(n, "IPC:write: pipe:write", "...Delivered payload");
+        logger:l(n, "IPC:write -> pipe:write", "...Delivered payload");
     end)
 end
 
---- There is no need to go through the authentication process (OAuth2) as 
---- suggested in the Discord Developer Documentation. You can send a 
---- "SET_ACTIVITY" payload directly to the local RPC server. I think the OAuth2
---- is for application that use WebSocket to communicate with the local RPC 
--- server
-function IPC:set_activity()
+--[[ 
+ There is no need to go through the authentication process (OAuth2) as suggested 
+ in the Discord Developer Documentation. You can send a 
+ "SET_ACTIVITY" payload directly to the local RPC server.
+--]]
+---@param activity Activity
+function IPC:set_activity(activity)
     local t = {
         args = {
-            activity = {
-                state      = "In RPC | APM: 69",
-                details    = "Editing ipc.lua",
-                assets     = {
-                    large_image = "lua",
-                    small_image = "neovim"
-                }
-            },
-            instance = true,
+            activity = activity,
             pid = vim.loop:os_getpid()
         },
         cmd = "SET_ACTIVITY",
-        nonce = uuid.uuid4()
-    }
-
-    self:write(Opcode.Frame, t)
-end
-
-function IPC:authenticate()
-    if self.is_authenticated then return end
-
-    ---@type Payload
-    local t = {
-        args = {
-            client_id = client_id,
-            scopes =  {
-                "rpc",
-                "identify"
-            },
-        },
-        cmd = "AUTHORIZE",
         nonce = uuid.uuid4()
     }
 
@@ -277,6 +244,10 @@ function IPC:handshake()
     local t = { client_id = client_id, v = 1 }
 
     self:write(Opcode.Handshake, t)
+end
+
+function IPC:destroy()
+    self.pipe:close()
 end
 
 return IPC:new()
