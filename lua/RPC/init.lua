@@ -1,4 +1,5 @@
 local logger = require("RPC.logger")
+
 local Opts = require("RPC.options")
 
 local n = "RPC.init"
@@ -12,13 +13,17 @@ local RPC = {}
 RPC.__index = RPC
 
 function RPC:setup(usr)
+    assert(usr.ipc_path, "Please specify the absolute path of discord IPC file.")
+
     local timer = vim.uv.new_timer()
 
     local opts = Opts:new(usr)
 
+    if usr.log_level then logger:set_filter(usr.log_level) end
+
     local app = setmetatable({
         opts         = opts,
-        __IPC        = require("RPC.ipc"),
+        __IPC        = require("RPC.ipc"):new(usr.ipc_path),
         __state      = require("RPC.state"):new(),
         __timer      = timer
     }, self)
@@ -57,21 +62,33 @@ function RPC:destroy()
 end
 
 function RPC:update()
-    if self.opts.logging then
-        logger:l(n, "RPC:update", string.format("Updating activity..."))
-    end
+    logger:l(30, n, "RPC:update", string.format("Updating activity..."))
 
     self.__state:set_activity()
 
     self.__IPC:set_activity(self.__state.activity)
 
-    if self.opts.logging then
-        logger:l(n, "RPC:update", self.__state:tostring())
-    end
+    logger:l(20, n, "RPC:update", self.__state:tostring())
 end
 
-function RPC:show_log()
-    logger:show()
+function RPC:show_log() logger:show() end
+
+function RPC:pause_update()
+    if self.__timer then self.__timer:stop() end
+end
+
+function RPC:resume_update()
+    if self.__timer then
+        self.__timer:start(
+            self.opts.auto_update_timer,
+            self.opts.auto_update_timer,
+            function ()
+               if self.__IPC.handshake_finish then
+                    vim.schedule(function () self:update() end)
+               end
+            end
+        )
+    end
 end
 
 return RPC
