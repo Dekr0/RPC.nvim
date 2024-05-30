@@ -2,8 +2,6 @@
 ---@field apm               boolean
 ---@field auto_update       boolean
 ---@field auto_update_timer integer | nil
----@field logging           boolean 
----@field profiling         boolean
 local Opts = {}
 Opts.__index = Opts
 
@@ -17,8 +15,6 @@ function Opts:new(usr)
        apm               = usr.apm or false,
        auto_update       = usr.auto_update or false,
        auto_update_timer = usr.auto_update_timer or false,
-       logging           = usr.logging or true,
-       profiling         = usr.profiling or false
    }, self)
 
    return opts
