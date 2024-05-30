@@ -2,6 +2,8 @@
 
 - WARNING! This plugin is still work in progress despite I have used for a few months.
 
+- This plugin only work within one instance of Neovim. In other word, if there are multiple instance of Neovim, it will disrupt communication inside the pipe / unix domain socket with Discord.
+
 - This is my take on implementation of Discard Rich Presence Integration for Neovim.
 
 ## Table of Contents
@@ -10,6 +12,7 @@
     - [Prerequisites](#prerequisites)
         - [Why C](#why-c)
     - [Installation Instructions](#installation-instructions) 
+        - `ipc_path` (Important !!!)
 
 ## Installation and Usage <a name="installation-and-usage"></a>
 
@@ -72,6 +75,7 @@
             apm               = false, -- Not yet implemented
             auto_update       = true,
             auto_update_timer = 10000, -- Must be greater 5000 (5 seconds)
+            ipc_path          = "/run/user/1000/discord-ipc-0",
             log_level         = 50     -- 50 => Fatal
         })
 
@@ -90,3 +94,11 @@
     - For `lazy.nvim`, it will try to locate the `lua` folder inside the specify repository directory.
         - Please consult with official documentation of `lazy.nvim` for guaranteed correctness.
     - As an example, the given repository directory is `~/RPC.nvim`, then it will look for `~/RPC.nvim/lua`. 
+
+#### `ipc_path` <a name="ipc-path"></a> 
+
+- The location of the pipe / unix domain socket to communicate with Discord largely varied from operate systems.
+- Typically, the pipe / unix domain socket will have name of `discord-ipc-x` where `x` range from `0` to `9`.
+- Please do it local search in your disk to locate this file.
+- In Archlinux, one possible location is in `/run/usr/1000/` folder.
+
