@@ -2,7 +2,7 @@
  * The serialization algorithm is a directly referenced and ported from 
  * the implementation of string.pack and string.unpack in lstrlib.c.
  *
- * The following functions do not aim for general purpose use. It follows the 
+ * The following functions do not aim for general purpose use. It builds for the 
  * binary message structure used in Discord RPC. 
  *
  * | opcode | length of JSON data | JSON data |
