@@ -1,5 +1,4 @@
 local utils = require("RPC.utils")
-local logger = require("RPC.logger")
 
 ---@class Timestamps
 ---@field start integer
@@ -39,8 +38,6 @@ local Icon = {
 ---@class State
 ---@field activity        Activity | nil
 ---@field apm             number
----@field custom_details  string 
----@field custom_state    string
 ---@field ext             string
 ---@field filename        string
 ---@field workplace       string
@@ -48,36 +45,9 @@ local Icon = {
 local State = {}
 State.__index = State
 
-local MAX_TEXT_LEN  = 128
-local MAX_EXT_LEN   = 12
-local STATE_PREFIX       = "In "
-local APM_PREFIX         = " | APM: "
-local DETAILS_PREFIX     = "Editing ."
-local FILENAME_POSTFIX   = "... "
-local POSTFIX            = "..."
-local MAX_WORKPLACE_LEN = MAX_TEXT_LEN - #STATE_PREFIX - #APM_PREFIX - 3
 
---[[
---  custom_state and custom_detail are strings respectively that can be either a
---  pure plain text, or pure directives (indicate by square bracket []), or a
---  mix of above two. The directives will be parsed and be replace to the 
---  corresponding content.
---
---  Following are the directives that can be parsed (must be exact match)
---      - [file] => replace with current active buffer name
---      - [mode] => replace with current active mode
---      - [workplace] => replace with current working directory
---      - [apm] => replace with user's APM (Action Per Minute)
---      directory
--- 
--- An example: 
---      custom_detail = "Editing: [file] | Mode: [mode]",
---      custom_state  ="In workplace: [workplace] | APM: [apm]"
---]]
----@param custom_details string | nil
----@param custom_state   string | nil
 ---@return State
-function State:new(custom_details, custom_state)
+function State:new()
     local filename = ""
     local ext = ""
     if not utils.open_as_workplace() then
@@ -98,8 +68,6 @@ function State:new(custom_details, custom_state)
         activity = activity,
         apm = 0,
         ext = ext,
-        custom_detail = custom_details or "Editing: [file] | Mode: [mode]",
-        custom_state  = custom_state or "In workplace: [workplace] | APM: [apm]",
         filename = filename,
         mode = "Normal",
         workplace = utils.cwd(),
@@ -119,10 +87,10 @@ end
 ---@return boolean
 function State:on_buf_enter()
     local buf_name = vim.api.nvim_buf_get_name(0)
-    if (vim.fn.isdirectory(buf_name) == 1) then
+    if vim.fn.isdirectory(buf_name) == 1 then
         return false
     end
-    if (string.len(buf_name) == 0) then
+    if string.len(buf_name) == 0 then
         return false
     end
     local filename, ext = utils.get_name_ext()
@@ -142,7 +110,16 @@ function State:on_dir_changed(workplace)
     self.workplace = workplace and vim.fs.basename(workplace) or "???"
 end
 
--- Not support custom state and details yet.
+
+local MAX_TEXT_LEN  = 128
+local MAX_EXT_LEN   = 12
+local STATE_PREFIX       = "In "
+local APM_PREFIX         = " | APM: "
+local DETAILS_PREFIX     = "Editing ."
+local FILENAME_POSTFIX   = "... "
+local POSTFIX            = "..."
+local MAX_WORKPLACE_LEN = MAX_TEXT_LEN - #STATE_PREFIX - #APM_PREFIX - 3
+
 function State:set_activity()
     math.randomseed(os.time())
     math.random(); math.random(); math.random() -- warm up
@@ -165,24 +142,31 @@ function State:set_activity()
         }
     end
 
-    if self.filename == "" then self.activity.details = ""
+
+    if self.filename == "" then 
+        self.activity.details = ""
     else
+        -- Definitely need a rewrite for trimming the display message
         local filename_lim = MAX_TEXT_LEN - #DETAILS_PREFIX - 
             (#self.ext < MAX_EXT_LEN and #self.ext or MAX_EXT_LEN)
 
-        self.activity.details = string.format("Editing %s.%s",
+        self.activity.details = string.format("Editing %s",
             #self.filename <= filename_lim and self.filename 
-                or self.filename:sub(1, filename_lim - #FILENAME_POSTFIX)..FILENAME_POSTFIX,
-
-            #self.ext <= MAX_EXT_LEN and self.ext 
-                or self.ext:sub(1, MAX_EXT_LEN - #POSTFIX)..POSTFIX
+                or self.filename:sub(1, filename_lim - #FILENAME_POSTFIX)..FILENAME_POSTFIX
         )
+        
+        if self.filename ~= self.ext then
+            self.activity.details = self.activity.details..string.format(".%s",
+                #self.ext <= MAX_EXT_LEN and self.ext 
+                    or self.ext:sub(1, MAX_EXT_LEN - #POSTFIX)..POSTFIX
+            )
+        end
     end
     
     self.activity.state = string.format("In %s | APM: %d",
 
         #self.workplace < MAX_WORKPLACE_LEN and self.workplace or 
-            self.workplace:sub(1, MAX_WORKPLACE_LEN - #POSTFIX).."POSTFIX",
+            self.workplace:sub(1, MAX_WORKPLACE_LEN - #POSTFIX)..POSTFIX,
 
         self.apm
     )
