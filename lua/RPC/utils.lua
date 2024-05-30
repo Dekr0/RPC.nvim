@@ -36,6 +36,7 @@ function M.get_name_ext()
         ext = string.sub(basename, prev_idx + 1)
     else
         filename = basename
+        ext = basename
     end
 
     return filename, ext
