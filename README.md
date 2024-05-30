@@ -12,7 +12,7 @@
     - [Prerequisites](#prerequisites)
         - [Why C](#why-c)
     - [Installation Instructions](#installation-instructions) 
-        - `ipc_path` (Important !!!)
+        - [ipc_path](#ipc-path) (Important !!!)
 
 ## Installation and Usage <a name="installation-and-usage"></a>
 
