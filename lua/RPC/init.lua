@@ -4,8 +4,8 @@ local Opts = require("RPC.options")
 
 local n = "RPC.init"
 
-
 ---@class App
+---@field app          App -- This need to be fixed. Returning from RPC:setup() does not persist.
 ---@field opts         Opts
 ---@field __IPC        IPC | nil
 ---@field __state      State
@@ -15,6 +15,8 @@ RPC.__index = RPC
 
 
 function RPC:setup(usr)
+    if self.app then return end
+
     assert(usr.ipc_path, "Please specify the absolute path of discord IPC file.")
 
     local timer = vim.uv.new_timer()
@@ -23,7 +25,7 @@ function RPC:setup(usr)
 
     if usr.log_level then logger:set_filter(usr.log_level) end
 
-    local app = setmetatable({
+    self.app = setmetatable({
         opts         = opts,
         __IPC        = require("RPC.ipc"):new(opts.ipc_path),
         __state      = require("RPC.state"):new(),
@@ -35,24 +37,22 @@ function RPC:setup(usr)
             opts.auto_update_timer,
             opts.auto_update_timer,
             function ()
-                if app.__IPC.handshake_finish then
-                    vim.schedule(function () app:update() end)
+                if self.app.__IPC.handshake_finish then
+                    vim.schedule(function () self.app:update() end)
                 end
             end
         )
     end
 
     vim.api.nvim_create_autocmd("BufEnter",   { callback = function ()
-        app.__state:on_buf_enter()
+        self.app.__state:on_buf_enter()
     end})
     vim.api.nvim_create_autocmd("DirChanged", { callback = function ()
-        app.__state:on_dir_changed(vim.v.event["cwd"])
+        self.app.__state:on_dir_changed(vim.v.event["cwd"])
     end})
     vim.api.nvim_create_autocmd("VimLeave",   { callback = function ()
-        app:destroy()
+        self.app:destroy()
     end})
-
-    return app
 end
 
 
@@ -152,6 +152,5 @@ function RPC:open()
         )
     end
 end
-
 
 return RPC
