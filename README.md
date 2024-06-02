@@ -32,24 +32,26 @@
 
 #### Why C? (Skip if you want to) <a name="why-c"></a>
 
-- The communication between Discord and a program you want to integrate Rich Presence happen in a pipe (Windows) / a unix domain socket (Linux).
+- The communication between Discord and a program with Rich Presence integration happen in a pipe (Windows) / a unix domain socket (Linux).
 - Thus, the communication uses binary message format where all data need to be serialized (packed) into a series of bytes.
-- In order to communicate with Discord via a pipe / unix domain socket, there's a simple messaging protocol needed to follow.
-- Discord process only recognizes by the following binary message structure. It is presented represented via a single byte array.
+- In order to communicate with Discord via a pipe / unix domain socket, it's require to follow a simple messaging protocol.
+- Discord process only recognizes the following binary message structure. It is represented via a single byte array.
 ```
 | opcode (32 bit unsigned integer in little endian) | length of stringify JSON data (32 bit unsigned integer in little endian) | stringify JSON data |
 ```
-- There's already a builtin function to encode a table into string JSON data in Neovim.
-- However, since Neovim use LuaJIT which does not have builtin binary serialization function in Lua 5.3 (`string.pack` and `string.unpack`), thus serializing other Lua data type into the right binary form in the right byte order is a problem.
+- There's already a builtin function to encode a table into stringify JSON data in Neovim.
+- However, since Neovim use LuaJIT which does not have builtin binary serialization function in Lua 5.3 (`string.pack` and `string.unpack`). 
+- Thus, serializing other Lua data type into the right binary form in the right byte order is a problem.
 - There are some Lua library available in open source that attempt to implement these binary serialization from Lua 5.3, which written purely in Lua.
 - However, I still decide to write my implementation since the following.
     - It make more sense and more convenience to perform binary serialization in lower level due to the access of bit operators on byte and byte array.
     - I only need to (de)serialize 32 bit unsigned integer. I don't need the extra serializations for other data type which make the binary serialization implementation larger than my use case.
+    - A challenge I want to do.
 
 - Secondly, Discord process requires each message to include UUID4 in each JSON payload.
 - Again, it's more convenience to implement UUID4 based on steps RFC9562 mention in lower level due to the access of bit operators on byte and byte array.
 
-- In terms of performance wise, I won't make a conclusion until a benchmark is done. 
+- In terms of performance wise, I won't make a conclusion until a fair benchmark is made. 
 
 ### Installation Instructions <a name="installation-instructions"></a>
 
@@ -99,6 +101,7 @@
 
 - The location of the pipe / unix domain socket to communicate with Discord largely varied from operate systems.
 - Typically, the pipe / unix domain socket will have name of `discord-ipc-x` where `x` range from `0` to `9`.
-- Please do it local search in your disk to locate this file.
+- Please do a local search in your disk to locate this file.
 - In Archlinux, one possible location is in `/run/usr/1000/` folder.
+- Feel free to leave a note on the location you find in your location machine. This can help me to write to function that attempts to locate them without explicitly specify the path.
 
