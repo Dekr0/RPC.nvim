@@ -33,6 +33,7 @@ local Icon = {
     NORMAL    = "normal",
     REPLACE   = "replace",
     VISUAL    = "visual",
+    NEOVIM   = "neovim",
 }
 
 ---@class State
@@ -170,6 +171,17 @@ function State:set_activity()
 
         self.apm
     )
+end
+
+function State:clear_activity()
+   self.activity.assets.large_image = Icon.NEOVIM
+   self.activity.assets.large_text  = ""
+   self.activity.assets.small_image = ""
+   self.activity.assets.small_text  = ""
+   
+   self.activity.details = ""
+
+   self.activity.state = ""
 end
 
 return State
