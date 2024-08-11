@@ -30,7 +30,6 @@ local Icon = {
     MD        = "md",
     TS        = "ts",
     INSERT    = "insert",
-    NORMAL    = "normal",
     REPLACE   = "replace",
     VISUAL    = "visual",
     NEOVIM   = "neovim",
@@ -103,6 +102,13 @@ function State:on_buf_enter()
     self.filename = filename
     self.ext = ext
 
+    if self.ext == "mts" then
+        self.ext = "ts"
+    elseif self.ext == "mjs" then
+        self.ext = "js"
+    end
+        
+
     return true
 end
 
@@ -127,19 +133,30 @@ function State:set_activity()
 
     self.apm = math.random(60, 90)
 
+    local mode = vim.api.nvim_get_mode()
+    if mode == "n" then
+        self.mode = "Normal"
+    elseif mode == "i" then
+        self.mode = "Insert"
+    elseif mode == "r" then
+        self.mode = "Replace"
+    elseif mode == "v" then
+        self.mode = "Visual"
+    end
+
     if self.filename == "" then
         self.activity.assets = {
             large_image = "neovim",
             large_text  = string.format("In %s", self.workplace),
-            small_image = Icon.NORMAL,
+            small_image = Icon.NEOVIM,
             small_text  = "In Normal mode"
         }
     else
         self.activity.assets = {
             large_image = Icon[self.ext:upper()] or "unknown",
             large_text  = string.format("%s.%s", self.filename, self.ext),
-            small_image = Icon.INSERT,
-            small_text  = string.format("In %s mode", Icon.INSERT)
+            small_image = Icon.NEOVIM,
+            small_text  = string.format("In Normal mode")
         }
     end
 
